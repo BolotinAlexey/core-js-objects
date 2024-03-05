@@ -337,32 +337,120 @@ function group(arr, keyF, valF) {
  */
 
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  str: '',
+  prev: '',
+  element(val) {
+    if (this.prev === 'element') {
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+    }
+    if (this.prev) {
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    }
+    this.str += val;
+    const obj = Object.create(this);
+    obj.str = this.str;
+    obj.prev = 'element';
+    this.str = '';
+    this.prev = '';
+    return obj;
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  id(val) {
+    if (this.prev === 'id') {
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+    }
+    if (this.prev && this.prev !== 'element') {
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    }
+    this.str += `#${val}`;
+    const obj = Object.create(this);
+    obj.str = this.str;
+    obj.prev = 'id';
+    this.str = '';
+    this.prev = '';
+    return obj;
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  class(val) {
+    if (this.prev === 'attr' || this.prev.slice(0, 6) === 'pseudo') {
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    }
+    this.str += `.${val}`;
+    const obj = Object.create(this);
+    obj.str = this.str;
+    obj.prev = 'class';
+    this.str = '';
+    this.prev = '';
+    return obj;
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  attr(val) {
+    if (this.prev.slice(0, 6) === 'pseudo') {
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    }
+    this.str += `[${val}]`;
+    const obj = Object.create(this);
+    obj.str = this.str;
+    obj.prev = 'attr';
+    this.str = '';
+    this.prev = '';
+    return obj;
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(val) {
+    if (this.prev === 'pseudoEl') {
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    }
+    this.str += `:${val}`;
+    const obj = Object.create(this);
+    obj.str = this.str;
+    obj.prev = 'pseudoCls';
+    this.str = '';
+    this.prev = '';
+    return obj;
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoElement(val) {
+    if (this.prev === 'pseudoEl') {
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+    }
+    this.str += `::${val}`;
+    const obj = Object.create(this);
+    obj.str = this.str;
+    obj.prev = 'pseudoEl';
+    this.str = '';
+    this.prev = '';
+    return obj;
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  combine(selector1, combinator, selector2) {
+    this.str = `${selector1.str} ${combinator} ${selector2.str}`;
+    const obj = Object.create(this);
+    obj.str = this.str;
+    this.str = '';
+    this.prev = '';
+    return obj;
+  },
+  stringify() {
+    let out;
+    [out, this.str] = [this.str, ''];
+    return out.toString();
   },
 };
 
